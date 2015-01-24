@@ -1,0 +1,1 @@
+xboard -fcp './src/xboardInterface.lisp --xboard'
