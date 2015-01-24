@@ -24,7 +24,7 @@ chmod 777 run
 
 **Video Demo**
 
-<iframe width="560" height="315" src="https://www.youtube.com/watch?v=SzdItkudGLw&feature=youtu.be">
+[![Screenshot](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot.png)](http://youtu.be/SzdItkudGLw)
 
 
 
