@@ -8,7 +8,7 @@ There is no need to make the program. You just have to install xboard and sbcl. 
 
 To install xboard and sbcl just type:
 
-sudo apt-get intall xboard sbcl
+sudo apt-get install xboard sbcl
 
 **To run**
 
