@@ -24,7 +24,7 @@ chmod 777 run
 
 **Video Demo**
 
-[![Screenshot](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot.png)](http://youtu.be/SzdItkudGLw)
+[![Screenshot](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot2.png)](http://youtu.be/SzdItkudGLw)
 
 
 
