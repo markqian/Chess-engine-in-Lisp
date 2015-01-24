@@ -20,6 +20,7 @@ chmod 777 run
 
 **Screen Shots**
 
+![Alt text](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot.png)
 
 **Video Demo**
 
