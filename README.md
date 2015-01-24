@@ -12,10 +12,6 @@ sudo apt-get install xboard sbcl
 
 **To run**
 
-type
-
-chmod 777 run
-
 ./run
 
 **Screenshots**
