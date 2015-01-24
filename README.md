@@ -18,7 +18,7 @@ chmod 777 run
 
 ./run
 
-**Screen Shots**
+**Screenshots**
 
 ![Alt text](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot.png)
 
