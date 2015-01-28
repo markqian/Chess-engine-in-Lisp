@@ -1,9 +1,10 @@
 (load "./src/board.lisp")
 
-
-
 (defun zero (i)
   (= i 0))
+
+(defun not-zero (i)
+  (not (zero i)))
 
 (defun pboards (b piece color)
   (aref (boards b) color piece))
@@ -11,6 +12,10 @@
 (defun move-array (piece cord)
   (aref moveArray piece cord))
 
+(defun pieces (b color piece)
+  (aref (boards b) color piece))
+
+;;generate bishop and queen attack on the specified coordinate
 (defun bisque-attacks (b cord color)
   (let* ((bisque (logand (logior (pboards b BISHOP color)
 				 (pboards b QUEEN color))
@@ -20,7 +25,7 @@
 	     (let ((ray (aref fromToRay cord bit)))
 	       (if (and (not (= ray 0)) (= (logand ray others) 0)) (ret t))))))
   
-
+;;generate rook and queen attacks on the specified coordinate
 (defun rooque-attacks (b cord color)
   (let* ((rooque (logand (logior (pboards b ROOK color)
 				 (pboards b QUEEN color))
@@ -30,7 +35,7 @@
 	     (let ((ray (aref fromToRay cord bit)))
 	       (if (and (not (= ray 0)) (= (logand ray others) 0)) (ret t))))))
   
-
+;;check if a particular coordinate is attacked
 (defun isAttacked (b cord color)
   (let ((ptype (or (and (= color white) BPAWN) PAWN)))
     (cond
@@ -43,11 +48,7 @@
      ((not (zero (logand (pboards b KING color) (move-array KING cord))))
       T))))
   
-
-(defun pieces (b color piece)
-  (aref (boards b) color piece))
-
-
+;;Get all attacks on the particular cordinate
 (defun getAttacks (b cord color)
   (let* ((bits (logand (pieces b color KNIGHT) 
 		      (move-array KNIGHT cord)))
@@ -76,6 +77,7 @@
 		     (setf bits (logior bits (aref bitPosArray c)))))))
     bits))
 
+;;Generate a bitboard and return all possible moves of the piece
 (defun getPieceMoves (b cord color piece)
   (let ((blocker (blocker b))
 	(bits 0))
@@ -109,9 +111,8 @@
     bits))
 
 
-(defun not-zero (i)
-  (not (zero i)))
 
+;;check if there is the pin on the king
 (defun pinnedOnKing (b cord color)
   (let* ((kingCord (aref (kings b) color))
 	 (dir (aref directions kingCord cord))
@@ -164,26 +165,7 @@
 		(setf theirs (logior theirs bit)))))))
     (list ours theirs)))
 
-		
-;(defun defends (b fcord tcord)
-;  (let ((board b)
-;	(color BLACK)
-;	(islegal nil))	
-;    (if (logand (aref (friends board) WHITE) (aref bitPosArray fcord))
-;	(setf color WHITE))
-;    (let ((opcolor (- 1 color)))
-;      (bitincf (aref (boards board) color piece) 'logand (aref notBitPosArray tcord))
-;      (bitincf (aref (boards board) opcolor piece) 'logior (aref bitPosArray tcord))
-;      (bitincf (aref (friends board) color) 'logand (aref notBitPosArray tcord))
-;      (bitincf (aref (friends board) color) 'logand (aref bitPosArray tcord)))
-;    (let ((backupColor (color board)))
-;      (setColor board color)
-;      (setf islegal (validateMove board (newMove fcord tcord)))
-;      (setColor board backupColor))
-;    islegal))
-	  
-      
-      
+;;Determines whether the current player is in check	             
 (defun isChecked (b)   
   (if (null (checked b)) (let ((kingcord (aref (kings b) 
 					       (color b))))
@@ -192,7 +174,7 @@
 					     (- 1 (color b))))))
   (checked b))
 
-
+;;Determines whether opponent is in check
 (defun opIsChecked (b)
   (if (null (opchecked b)) (let ((kingcord 
 				(aref (kings b) 

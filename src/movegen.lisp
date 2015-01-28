@@ -1,11 +1,17 @@
 (load "./src/attack.lisp")
 
+(defun getEnemies (b c)
+  (aref (friends b) (- 1 c)))
+
+(defun notfriends (b) (lognot (aref (friends b) (color b))))
 
 (defvar shiftedFlags (make-array '(8)))
 (defvar shiftedFromCords (make-array '(64)))
 
+;; generate new move based on move code
 (defun newMove (fromcord tocord &optional (flag NORMAL_MOVE)) 
   (+ (aref shiftedFlags flag) (aref shiftedFromCords fromcord) tocord))
+
 
 (loop for i below 64 do
       (setf (aref shiftedFromCords i) (ash i 6)))
@@ -51,6 +57,7 @@
 		       (do-bits (c (logand attackBoard mask))
 				(collect (newMove cord c))))))))
 
+;; generate bishop and queen moves
 (defun gen-bisque-moves (b mask)
   (let* ((bishops (aref (boards b) (color b) BISHOP))
 	 (queens (aref (boards b) (color b) QUEEN))
@@ -64,10 +71,8 @@
 			       (do-bits (c (logand attackBoard mask))
 					(collect (newMove cord c))))))))
 
-(defun getEnemies (b c)
-  (aref (friends b) (- 1 c)))
 
-
+;;generate one step white pawn moves
 (defun onestep-whitepawn-moves (b)
   (if (= (color b) white)
       (let* ((pawns (aref (boards b) white PAWN))	
@@ -80,7 +85,7 @@
 				       collect (newMove (- cord 8) cord p))
 				   (list (newMove (- cord 8) cord)))))))))
 
-
+;; generate two step white pawn moves
 (defun twostep-whitepawn-moves (b)
   (if (= (color b) white)
       (let* ((pawns (aref (boards b) white PAWN))
@@ -91,7 +96,7 @@
 	(do-bits (cord movedpawns)
 		 (collect (newMove (- cord 16) cord))))))
   
-
+;; generate capture left white pawn moves
 (defun captureleft-whitepawn-moves (b)
   (if (= (color b) white)
       (let* ((enpassants (enpassant b))
@@ -109,6 +114,7 @@
 			   ((equal cord enpassants) (list (newMove (- cord 7) cord ENPASSANT)))
 			   (t (list (newMove (- cord 7) cord))))))))))
 
+;; generate capture right white pawn moves
 (defun captureright-whitepawn-moves (b)
   (if (= (color b) white)
       (let* ((enpassants (enpassant b))
@@ -127,7 +133,7 @@
 			       ((equal cord enpassants) (list (newMove (- cord 9) cord ENPASSANT)))
 			       (t (list (newMove (- cord 9) cord))))))))))
   
-
+;; generate one step black pawn moves
 (defun onestep-blackpawn-moves (b)
   (if (= (color b) black)
       (let* ((pawns (aref (boards b) black PAWN))	
@@ -140,7 +146,7 @@
 					   collect (newMove (+ cord 8) cord p))
 				   (list (newMove (+ cord 8) cord)))))))))
 
-
+;; generate two step black pawn moves
 (defun twostep-blackpawn-moves (b)
   (if (= (color b) black)
       (let* ((pawns (aref (boards b) black PAWN))
@@ -151,7 +157,7 @@
 	(do-bits (cord movedpawns)
 		 (collect (newMove (+ cord 16) cord))))))
 
-
+;; generate capture left black pawn moves
 (defun captureleft-blackpawn-moves (b)
   (if (= (color b) black)
       (let* ((enpassants (enpassant b))
@@ -169,7 +175,7 @@
 			       ((equal cord enpassants) (list (newMove (+ cord 7) cord ENPASSANT)))
 			       (t (list (newMove (+ cord 7) cord))))))))))
 
-
+;; generate capture right black pawn moves
 (defun captureright-blackpawn-moves (b)
   (if (= (color b) black)
       (let* ((enpassants (enpassant b))
@@ -187,7 +193,7 @@
 			       ((equal cord enpassants) (list (newMove (+ cord 9) cord ENPASSANT)))
 			       (t (list (newMove (+ cord 9) cord))))))))))
   
-
+;; generate castling for one side
 (defun generateOne (b color rooknum king-after rook-after)
   (let ((castle KING_CASTLE))
     (if (= rooknum 0)
@@ -205,6 +211,7 @@
 		(if (isAttacked b cord (- 1 color)) (setq attacked t)))
 	    (if (not attacked) (newMove kings king-after castle)))))))
 
+;; generate castle moves
 (defun genCastles (b)
   (let ((moves '()))
     (if (= (color b) white)
@@ -224,7 +231,7 @@
 	      (if move (setf moves (cons move moves)))))))
     moves))
   
-	
+;; generate moves that captures	
 (defun genCaptures (b)
   (let ((enemies (getEnemies b (color b))))
     (append
@@ -237,7 +244,7 @@
      (captureleft-blackpawn-moves b)
      (captureright-blackpawn-moves b))))
 
-
+;; generate moves that doesn't capture
 (defun genNonCaptures (b)
   (let ((notblocker (lognot (blocker b))))
     (append
@@ -251,8 +258,7 @@
      (twostep-blackpawn-moves b)
      (genCastles b))))
 
-(defun notfriends (b) (lognot (aref (friends b) (color b))))
-
+;;generate all possible moves except when king is in check
 (defun generate-all-moves (b)
   (let ((notfriends (lognot (aref (friends b) (color b)))))
     (append
@@ -271,7 +277,7 @@
      (genCastles b)
 )))
 
-
+;;captures checking pieces
 (defun captures-checking-pieces (b checkers)
   (let* ((color (color b))
 	 (chkcord (firstBit checkers))
@@ -287,6 +293,7 @@
 			    collect (newMove cord chkcord p))
 		    (list (newMove cord chkcord))))))))
   
+;;capture using enpassant
 (defun enpassant-capture (b checkers)
   (let* ((chkcord (firstBit checkers))
 	 (color (color b))
@@ -301,6 +308,7 @@
 			       (if (not (pinnedOnKing b cord color))
 				   (collect (newMove cord ep ENPASSANT))))))))))
 
+;;get the moves that will block pieces. This function will be used in block checking piece
 (defun get-block-moves (b attacks checkers cord)
   (let ((color (color b))
 	(arBoard (arBoard b))
@@ -314,7 +322,7 @@
 			    collect (newMove fcord cord p))
 		    (list (newMove fcord cord))))))))
 
-
+;;generate moves that can block checking pieces
 (defun block-checking-piece (b)
   (let* ((color (color b))
 	 (opcolor (- 1 color))
@@ -348,7 +356,7 @@
 			      (setf a (logior a (aref bitPosArray (+ cord 16)))))))
 		   (collect (get-block-moves b a checkers cord))))))))
 
-
+;;generate escape routes
 (defun get-escape-route (b)
   (let* ((color (color b))
 	 (opcolor (- 1 color))
@@ -367,7 +375,7 @@
 	     (collect (if (not (isAttacked b cord opcolor))
 			  (newMove kcord cord))))))
 
-	
+;;generate evasions for king if in check	
 (defun genCheckEvasions (b)
   (let* ((color (color b))
 	 (opcolor (- 1 color))
