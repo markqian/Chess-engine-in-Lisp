@@ -1,6 +1,6 @@
 **Introduction**
 
-This is a chess engine written in Common Lisp. It uses bitboards for move generation and a very basic eval function to evaluate positions. The alphaBeta search function is based off the one found on [Chess Programming](http://chessprogramming.wikispaces.com/Alpha-Beta).
+This is a chess engine written in Common Lisp. It uses bitboards for parallel move generation and a very basic eval function to evaluate positions. The alphaBeta search function is based off the one found on [Chess Programming](http://chessprogramming.wikispaces.com/Alpha-Beta).
 
 **To Make/Install**
 
