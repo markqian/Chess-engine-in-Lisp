@@ -64,13 +64,27 @@
       (newMove fcord tcord ENPASSANT))
    (t (newMove fcord tcord)))))
 
+
+(defun getPieceString (p)
+  (cond 
+   ((= p 4) "k")
+   ((= p 5) "b")
+   ((= p 6) "r")
+   ((= p 7) "q")))
+
+
 (defun get-move-string (b)
   (let ((move (cadr (getResult b -1000 1000 3))))
     (if (equal move '())
 	'()
-      (concatenate 'string 
-		   (nth (getfrom move) square-name)
-		   (nth (getto move) square-name)))))
+      (if (>= (getflag move) 4)
+	  (concatenate 'string 
+		       (nth (getfrom move) square-name)
+		       (nth (getto move) square-name)
+		       (getPieceString (getflag move)))
+	(concatenate 'string 
+		     (nth (getfrom move) square-name)
+		     (nth (getto move) square-name))))))
 
 (defun get-move (b usrmove)
   (progn
