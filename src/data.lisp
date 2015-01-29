@@ -1,3 +1,60 @@
+
+;; helper functions
+(defun flatten (x)
+  (labels ((rec (x acc)
+		(cond ((null x) acc)
+		      ((atom x) (cons x acc))
+		      (t (rec 
+			  (car x)
+			  (rec (cdr x) acc))))))
+    (rec x nil)))
+
+
+(defun convertBitPos (n) 
+  (if (= n 1) 0 
+    (+ 1 (convertBitPos (/ n 2)))))
+
+(defmacro setBit (b p)
+  `(setf (ldb (byte 1 (- 63 ,p)) ,b) 1))
+
+(defun RANK (cord) (ash cord 3))
+
+(defun FILE (cord) (logand cord 7))
+
+(defmacro setAttack (attack cord map item) 
+  `(setf (gethash ,map (aref ,attack ,cord)) ,item))
+
+(defmacro add-to (m v h) `(setf ,h (cons (cons ,m ,v) ,h)))
+
+
+(defmacro with-collector ((&optional (collector-name 'collect) 
+				     (return-name 'ret)
+				     (flat-name 'flat))
+			  &body body)
+  (let ((result (gensym))
+	(retval (gensym))
+	(flat-result (gensym)))
+    `(let ((,result (list))
+	   (,retval nil)
+	   (,flat-result nil))
+       (flet ((,collector-name (arg) (push arg ,result))
+	      (,return-name (arg) (setf ,retval arg))
+	      (,flat-name () (setf ,flat-result t)))
+         (progn ,@body)
+         (cond (,flat-result (flatten ,result))
+	       (,result ,result)
+	       (t ,retval))))))
+
+(defmacro do-bits ((var x) &rest body)
+  "Evaluates [body] forms after binding [var] to each set bit in [x]"
+  (let ((k (gensym)))
+    `(with-collector ()
+       (do ((,k ,x (logand ,k (1- ,k))))
+           ((= ,k 0))
+         (let ((,var (- 63 (convertBitPos (logand ,k (- ,k))))))
+           ,@body)))))
+
+
 (defmacro bitincf (bit f v)
   `(setf ,bit (funcall ,f ,bit ,v)))
 
@@ -10,6 +67,8 @@
      (bitincf y 'logand (- y 1)))
     count))
 
+
+;;move codes
 (defconstant NORMAL_MOVE 0)
 (defconstant QUEEN_CASTLE 1)
 (defconstant KING_CASTLE 2)
@@ -19,9 +78,6 @@
 (defconstant ROOK_PROMOTION 6)
 (defconstant QUEEN_PROMOTION 7)
 
-(defmacro setBit (b p)
-  `(setf (ldb (byte 1 (- 63 ,p)) ,b) 1))
-
 (defvar rankBits (make-array '(8)))
 (defvar fileBits (make-array '(8)))
 
@@ -30,7 +86,7 @@
       (setf (aref rankBits (- 7 i)) (ash 255 (* i 8)))
       (setf (aref fileBits (- 7 i)) (ash #x0101010101010101 i)))
 
-
+;; constants
 (defconstant A1 0)
 (defconstant B1 1)
 (defconstant C1 2)
@@ -114,13 +170,25 @@
 (defconstant KING 6)
 (defconstant BPAWN 7)
 
-
 (defconstant BLACK 1)
 (defvar maxint 100)
+
 (defvar WHITE_SQUARES #x55AA55AA55AA55AA)
 (defvar BLACK_SQUARES #xAA55AA55AA55AA55)
 (defvar pieceHashes (make-array '(2 7 64) :initial-element 0))
 (defvar colorHash 1)
+
+(defvar init-pos "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
+(defvar square-name '("a1" "b1" "c1" "d1" "e1" "f1" "g1" "h1"
+			"a2" "b2" "c2" "d2" "e2" "f2" "g2" "h2"
+			"a3" "b3" "c3" "d3" "e3" "f3" "g3" "h3"
+			"a4" "b4" "c4" "d4" "e4" "f4" "g4" "h4"
+			"a5" "b5" "c5" "d5" "e5" "f5" "g5" "h5"
+			"a6" "b6" "c6" "d6" "e6" "f6" "g6" "h6"
+			"a7" "b7" "c7" "d7" "e7" "f7" "g7" "h7"
+			"a8" "b8" "c8" "d8" "e8" "f8" "g8" "h8"))
+
 
 (defvar reprCord '(
     "a1"  "b1"  "c1"  "d1"  "e1"  "f1"  "g1"  "h1" 
@@ -133,7 +201,6 @@
     "a8"  "b8"  "c8"  "d8"  "e8"  "f8"  "g8"  "h8"
 ))
 
-
 (defvar reprSign '("" "P" "N" "B" "R" "Q" "K"))
 
 (defvar cordDic '())
@@ -142,7 +209,6 @@
   (dolist (name reprCord)
     (setf cordDic (cons (cons name cord) cordDic))
     (incf cord)))
-
 
 (defvar dir '(()
 	      (9 11) 
@@ -182,8 +248,6 @@
 
 (defvar bitPosArray (make-array '(64)))      
 
-
-
 (defvar index64 #(63 0 58 1 59 47 53 2
 		  60 39 48 27 54 33 42 3
 	          61 51 37 40 49 18 28 20
@@ -193,90 +257,13 @@
 	          56 45 25 31 35 16 9 12
 		  44 24 15  8 23 7 6 5))
 
-
-(defun lastBit (bb) (let* ((debruijn64 #x07EDD5E59A4E28C2)
-			   (position (mod (ash (* (logand bb (- bb)) debruijn64) -58) 64)))
-		      (- 63 (aref index64 position))))
-
-(defun firstBit (bb) 
- (let ((result 0)
-       (bbtemp bb))
-  (cond ((> bbtemp #xFFFFFFFF) 
-	 (setf bbtemp (ash bbtemp -32) result (+ result 32)))
-	((> bbtemp #xFFFF) 
-	 (setf bbtemp (ash bbtemp -16) result (+ result 16)))
-	((> bbtemp #xFF) 
-	 (setf bbtemp (ash bbtemp -8) result (+ result 8))))
- (- 63 (+ result (floor (log bbtemp 2))))))
-
-
 (loop for i below 64 do
       (setf (aref bitPosArray i) (expt 2 (- 63 i))))
-
-(defun returnWithSetBit (b i)
-  (logior b (aref bitPosArray i)))
-
-
-(defun convertBitPos (n) 
-  (if (= n 1) 0 
-    (+ 1 (convertBitPos (/ n 2)))))
-
-(defun flatten1 (lst)
-  (if (null lst) '()
-    (if (atom (car lst)) (cons (car lst) (flatten1 (cdr lst)))
-      (append (flatten1 (car lst)) (flatten1 (cdr lst))))))
-
-(defun flatten (x)
-  (labels ((rec (x acc)
-		(cond ((null x) acc)
-		      ((atom x) (cons x acc))
-		      (t (rec 
-			  (car x)
-			  (rec (cdr x) acc))))))
-    (rec x nil)))
-
-(defmacro with-collector ((&optional (collector-name 'collect) 
-				     (return-name 'ret)
-				     (flat-name 'flat))
-			  &body body)
-  (let ((result (gensym))
-	(retval (gensym))
-	(flat-result (gensym)))
-    `(let ((,result (list))
-	   (,retval nil)
-	   (,flat-result nil))
-       (flet ((,collector-name (arg) (push arg ,result))
-	      (,return-name (arg) (setf ,retval arg))
-	      (,flat-name () (setf ,flat-result t)))
-         (progn ,@body)
-         (cond (,flat-result (flatten ,result))
-	       (,result ,result)
-	       (t ,retval))))))
-
-(defmacro do-bits ((var x) &rest body)
-  "Evaluates [body] forms after binding [var] to each set bit in [x]"
-  (let ((k (gensym)))
-    `(with-collector ()
-       (do ((,k ,x (logand ,k (1- ,k))))
-           ((= ,k 0))
-         (let ((,var (- 63 (convertBitPos (logand ,k (- ,k))))))
-           ,@body)))))
-
-
-(defun createBoard (i) i)
-
-(defmacro clearBit (b p)
-  `(setf (ldb (byte 1 (- 63 ,p)) ,b) 0))
-
 
 (defvar notBitPosArray (make-array '(64)))
 
 (loop for i below 64 do
       (setf (aref notbitPosArray i) (lognot (expt 2 (- 63 i)))))
-
-(defun returnWithClearBit (b i)
-  (logand b (aref notBitPosArray i)))
-  
 
 (loop for piece from 1 to (- (length dir) 1) do
       (dotimes (fcord 120)
@@ -294,7 +281,6 @@
 			(if (not (nth piece sliders))
 			    (return)))))
 		   (setf (aref moveArray piece g) b))))))
-
       
 (loop for fcord from 0 to 119 do
       (let ((g (nth fcord pmap))
@@ -335,8 +321,6 @@
 (defvar w_OOOhash (expt 2 1))
 (defvar w_OOhash (expt 2 0))
 
-
-
 (defvar B_OOO (expt 2 3))				 
 (defvar B_OO (expt 2 2))
 (defvar w_OOO (expt 2 1))
@@ -364,27 +348,6 @@
   (ini-kings  :accessor ini-kings  :initarg :ini-kings  :initform `#(,E1 ,E8))
   (ini-rooks  :accessor ini-rooks  :initarg :ini-rooks  :initform `#(#(,A1 ,H1) #(,A8 ,H8)))))
 
-
-
-(defun setbit-board (b color piece cord)
-  (setBit (aref (boards b) color piece) cord))
-
-(defun removebit-board (b color piece cord)
-  (setBit (aref (boards b) color piece) cord))
-
-(defun setpieceHash (b color piece cord) 
-  (setf (hash b) (logand (hash b) (aref pieceHashes color piece cord))))
-
-(defun setpawnhash (b color cord)
-  (setf (hash b) (logior (hash b) (aref pieceHashes color PAWN cord))))
-
-(defun set-arBoard (b cord piece)
-  (setf (aref (arBoard b) cord) piece))
-
-(defun set-kings (b color cord)
-  (setf (aref (kings b) color) cord))
-
-
 (defvar passedPawnMask (make-array '(2 64)))
 
 (loop for cord below 64
@@ -400,21 +363,17 @@
 	    (setf (aref passedPawnMask WHITE cord) (aref rays (mod (+ cord 1) 64) 7))
 	    (setf (aref passedPawnMask WHITE cord) (aref rays (mod (+ cord 1) 64) 4)))))
 
-
 (defvar isolaniMask (make-array '(8)))
 
 (setf (aref isolaniMask 0) (aref fileBits 1)) 
 (setf (aref isolaniMask 7) (aref fileBits 6))
+
 (loop for i from 1 to 7 
       do 
       (setf (aref isolaniMask 7) 
 	    (logior (aref fileBits (- i 1)) (aref fileBits (mod (+ i 1) 8)))))
 
-
 (defvar squarePawnMask (make-array '(2 64)))
-
-(defun RANK (cord) (ash cord 3))
-(defun FILE (cord) (logand cord 7))
 
 (loop for cord below 64
       do
@@ -437,7 +396,6 @@
 		     (aref squarePawnMask BLACK cord)
       		     (aref bitPosArray kmod64)
 		     (aref fromToRay kmod64 (logand kmod64 7))))))))
-
 
 (loop for cord from A2 to (+ H2 1) do
       (setf (aref squarePawnMask WHITE cord) 
@@ -466,12 +424,6 @@
 				      (aref rays cord 2)
 				      (ash 1 (- 63 cord)))))
 
-(defmacro setAttack (attack cord map item) 
-  `(setf (gethash ,map (aref ,attack ,cord)) ,item))
-
-(defun getAttack (attack cord map)
-  (gethash map (aref attack cord)))
-
 (defvar attack00 (map-into (make-array '64) 'make-hash-table))
 (defvar attack45 (map-into (make-array '64) 'make-hash-table))
 (defvar attack90 (map-into (make-array '64) 'make-hash-table))
@@ -482,15 +434,7 @@
 (defvar rot2 `#(,A1 ,B2 ,C3 ,D4 ,E5 ,F6 ,G7 ,H8))
 (defvar rot3 `#(,A8 ,B7 ,C6 ,D5 ,E4 ,F3 ,G2 ,H1))
 
-
-(defun reduce1 (f lst)
-  (if (null lst) lst
-    (funcall f (car lst) (reduce f (cdr lst)))))
-
 (defvar h '())
-
-(defmacro add-to (m v h) `(setf ,h (cons (cons ,m ,v) ,h)))
-
 
 (loop for cord below 8 do
       (loop for amap from 1 to 255 do
@@ -547,9 +491,6 @@
 					     (aref rot3 cord2)))))
 		      (setAttack attack135 (aref rot3 cord) map135 val)))))))
 
-(defun print-hash-entry (key value)
-    (format t "The value associated with the key ~S is ~S~%" key value))
-
 (defvar MAXBITBOARD (- (ash 1 64) 1))
 
 (do ((r A2 (+ 8 r)))
@@ -579,8 +520,6 @@
 					       (logand (ash v 8) MAXBITBOARD))) 
 		    (aref attack45 (mod (+ cord 8) 64)))))
 
-
-
 (do ((r (- H8 1) (- r 1)))
     ((< r A8))
   (do-bits (cord (aref ray45 r))
@@ -608,24 +547,37 @@
 					       (logand (ash v 8) MAXBITBOARD))) 
 		    (aref attack135 (+ cord 8)))))
 
+(defvar shiftedFlags (make-array '(8)))
+(defvar shiftedFromCords (make-array '(64)))
 
-(defun get-8-bits (bits n) 
-  (if (> n 8) nil
-    (cons (car bits) (get-8-bits (cdr bits) (+ n 1)))))
+(loop for i below 64 do
+      (setf (aref shiftedFromCords i) (ash i 6)))
 
-(defun get-rest (bits n)
-  (if (> n 8) bits
-    (get-rest (cdr bits) (+ n 1))))
+(loop for i in `(,NORMAL_MOVE ,QUEEN_CASTLE ,KING_CASTLE 
+		 ,ENPASSANT ,KNIGHT_PROMOTION ,BISHOP_PROMOTION
+                 ,ROOK_PROMOTION ,QUEEN_PROMOTION) do
+      (setf (aref shiftedFlags i) (ash i 12)))
 
-(defun divide-bits (bits n)
-  (if (> n 8) nil
-    (cons (reverse (get-8-bits bits 1)) (divide-bits (get-rest bits 1) (+ n 1)))))
 
-(defun make-bit-list (bits i)
-  (cond ((< i 0) nil)
-        ((logbitp i bits) (cons 1 (make-bit-list bits (- i 1))))
-	(t (cons 0 (make-bit-list bits (- i 1))))))
+(dolist (color `(,WHITE ,BLACK))
+  (dolist (piece `(,PAWN ,KNIGHT ,BISHOP ,ROOK ,QUEEN ,KING))
+    (loop for cord below 64
+	  do (setf (aref pieceHashes color piece cord)
+		   (random maxint)))))
 
-(defun print-board (board) 
-   (format nil "~:{~% ~D ~D ~D ~D ~D ~D ~D ~D~}" (divide-bits (make-bit-list board 63) 1)))
 
+(defvar fen15 "8/4P3/4K3/8/8/2k5/8/8 w - - 0 1")
+(defvar fen14 "r3k1nr/1bppqppp/4p3/4P3/1PpP4/2PB1N2/5PPP/R2Q1RK1 w kq - 0 1")
+(defvar fen13 "r3k1nr/1bppqppp/4p3/4P3/1PpP4/2PB1N2/5PPP/R2Q1RK1 w kq - 0 1")
+(defvar fen12 "r3k3/1b6/8/8/8/8/8/R3K3 w kq - 0 1")
+(defvar fen11 "1k6/1Q6/8/1R6/8/8/8/3K4 b - - 0 1")
+(defvar fen10 "8/4k3/4p3/5B2/4R3/4K3/8/8 b - - 0 1")
+(defvar fen9 "8/rppk3Q/p2p4/5r2/8/7P/5PP1/4R1K1 b - - 0 1")
+(defvar fen8 "r3k2r/1bpp1pp1/p3p3/1p2RP1p/8/3B3P/P1P3P1/1R4K1 b KQkq - 0 1")
+(defvar fen7 "r1b1k3/1pp2pp1/p6r/3p3p/2P5/1P1B1N1P/3Q1PP1/R5K1 w - - 0 1")
+(defvar fen6 "8/8/8/8/8/8/6k1/3KR1q1 w - - 0 1")
+(defvar fen5 "4k3/8/8/8/8/8/4P3/4K3 w - - 0 1")
+(defvar fen4 "r3k3/8/8/8/3R4/8/4P3/4K3 w - - 0 1")
+(defvar fen3 "r3k3/8/8/8/3p4/8/4P3/4K2R w Kq - 0 1")
+(defvar fen2 "4k3/8/8/8/8/8/8/4K2R w - - 0 1")
+(defvar fen "6k1/r7/4n1Q1/8/6K1/2bb4/8/8 b - - 0 0")

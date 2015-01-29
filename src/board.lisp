@@ -1,10 +1,4 @@
-(load "./src/data.lisp")
-
-(dolist (color `(,WHITE ,BLACK))
-  (dolist (piece `(,PAWN ,KNIGHT ,BISHOP ,ROOK ,QUEEN ,KING))
-    (loop for cord below 64
-	  do (setf (aref pieceHashes color piece cord)
-		   (random maxint)))))
+(load "~/chess/src/utility.lisp")
 
 (defun reset-board (b)
   (setf (blocker b) (createBoard 0)

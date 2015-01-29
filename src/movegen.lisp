@@ -1,27 +1,10 @@
-(load "./src/attack.lisp")
-
-(defun getEnemies (b c)
-  (aref (friends b) (- 1 c)))
-
-(defun notfriends (b) (lognot (aref (friends b) (color b))))
-
-(defvar shiftedFlags (make-array '(8)))
-(defvar shiftedFromCords (make-array '(64)))
+(load "~/chess/src/attack.lisp")
 
 ;; generate new move based on move code
 (defun newMove (fromcord tocord &optional (flag NORMAL_MOVE)) 
   (+ (aref shiftedFlags flag) (aref shiftedFromCords fromcord) tocord))
 
-
-(loop for i below 64 do
-      (setf (aref shiftedFromCords i) (ash i 6)))
-
-(loop for i in `(,NORMAL_MOVE ,QUEEN_CASTLE ,KING_CASTLE 
-		 ,ENPASSANT ,KNIGHT_PROMOTION ,BISHOP_PROMOTION
-                 ,ROOK_PROMOTION ,QUEEN_PROMOTION) do
-      (setf (aref shiftedFlags i) (ash i 12)))
-
-
+;; generate knight moves
 (defun gen-knight-moves (b mask)
   (let* ((knights (aref (boards b) (color b) KNIGHT)))
     (do-bits (cord knights)
@@ -30,19 +13,21 @@
 		       (do-bits (c (logand knightMoves mask))
 				(collect (newMove cord c))))))))
 
+;; generate king moves
 (defun gen-king-moves (b mask)
   (let* ((cord (firstBit (aref (boards b) (color b) king)))
 	 (kingMoves (aref moveArray KING cord)))
     (do-bits (c (logand kingMoves mask))
 	     (collect (newMove cord c)))))
 
-
+;; or of two attack bitboards
 (defun or-attack (at1 at2) 
   (cond ((and at1 at2) (logior at1 at2))
 	 ((or at1 at2) (or at1 at2))
 	 (t 0)))
 
 
+;; generate rook and queen moves
 (defun gen-rooque-moves (b mask)
   (let* ((rooks (aref (boards b) (color b) ROOK))
 	 (queens (aref (boards b) (color b) QUEEN))
@@ -141,7 +126,7 @@
 	     (movedpawns (logand (ash pawns 8) notblocker)))
 	(apply 'append 
 	       (do-bits (cord movedpawns) 
-			(collect (if (>= cord 56) 
+			(collect (if (<= cord 14) 
 				     (loop for p being the elements of PROMOTIONS
 					   collect (newMove (+ cord 8) cord p))
 				   (list (newMove (+ cord 8) cord)))))))))

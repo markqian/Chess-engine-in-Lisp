@@ -1,19 +1,4 @@
-(load "./src/board.lisp")
-
-(defun zero (i)
-  (= i 0))
-
-(defun not-zero (i)
-  (not (zero i)))
-
-(defun pboards (b piece color)
-  (aref (boards b) color piece))
-
-(defun move-array (piece cord)
-  (aref moveArray piece cord))
-
-(defun pieces (b color piece)
-  (aref (boards b) color piece))
+(load "~/chess/src/board.lisp")
 
 ;;generate bishop and queen attack on the specified coordinate
 (defun bisque-attacks (b cord color)
