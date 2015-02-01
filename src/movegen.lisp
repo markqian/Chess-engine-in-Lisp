@@ -126,7 +126,7 @@
 	     (movedpawns (logand (ash pawns 8) notblocker)))
 	(apply 'append 
 	       (do-bits (cord movedpawns) 
-			(collect (if (<= cord 14) 
+			(collect (if (<= cord 7) 
 				     (loop for p being the elements of PROMOTIONS
 					   collect (newMove (+ cord 8) cord p))
 				   (list (newMove (+ cord 8) cord)))))))))
