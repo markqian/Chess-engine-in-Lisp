@@ -293,7 +293,7 @@
 
 (defun not-promotions (b fpiece fcord tcord flag)
   (if (not (find flag promotions))
-      (progn	
+      (progn
 	(move b fcord tcord fpiece (color b)))))
 
 (defun applyMove (b move)
@@ -342,7 +342,8 @@
 	     (addPiece b fcord pawn color)))
 	  ((find flag promotions)
 	   (addPiece b fcord pawn color))
-	  (t (addPiece b fcord tpiece color)))))
+	  (t (progn
+	       (addPiece b fcord tpiece color))))))
   
 
 (defun popMove (b)

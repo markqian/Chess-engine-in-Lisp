@@ -565,7 +565,7 @@
 	  do (setf (aref pieceHashes color piece cord)
 		   (random maxint)))))
 
-
+(defvar fen16 "8/8/1P5p/8/1K3kP1/8/P7/2q5 b - - 0 1")
 (defvar fen15 "8/4P3/4K3/8/8/2k5/8/8 w - - 0 1")
 (defvar fen14 "r3k1nr/1bppqppp/4p3/4P3/1PpP4/2PB1N2/5PPP/R2Q1RK1 w kq - 0 1")
 (defvar fen13 "r3k1nr/1bppqppp/4p3/4P3/1PpP4/2PB1N2/5PPP/R2Q1RK1 w kq - 0 1")

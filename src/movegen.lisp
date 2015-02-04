@@ -324,7 +324,7 @@
 		 (let* ((a (getAttacks b cord color))
 			(a (logand a (lognot (logior kings pawns)))))
 		   (cond ((and (= color WHITE) (> cord H2))
-			  (if (logand (aref bitPosArray (- cord 8)) pawns)
+			  (if (not-zero (logand (aref bitPosArray (- cord 8)) pawns))
 			      (setf a (logior a (aref bitPosArray (- cord 8)))))
 			  (if (and 
 			       (= (ash cord -3) 3)
