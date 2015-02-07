@@ -1,10 +1,13 @@
 #!/usr/bin/sbcl --script
 (load "~/chess/src/search.lisp")
 
+;;board object
 (defvar board1 (make-instance 'board))
 
+;;apply init position fenstring to board1
 (applyFen board1 init-pos)
-  
+
+;;helper functions  
 (defun getPieceCode (move)
   (let ((m (subseq move 4 5)))
     (cond ((equal m "k")
@@ -20,6 +23,7 @@
 (defun is-promotion (move)
   (= (length move) 5))
 
+;;parsing xboard input
 (defun convert-to-move (b move)
   (let* ((fcord
 	  (position (subseq move 0 2) square-name :test #'equal))
@@ -77,6 +81,7 @@
   (if (equal s '()) s
     (concatenate 'string (car s) (c-strings (cdr s)))))
 
+;;recieve command from xboard
 (defun recieve-command (msg)
   (let ((tokens (tokenize-string msg)))
     (cond 
@@ -90,6 +95,7 @@
 	  (write-line "resign"))))
      (t '()))))
 
+;;main loop for communicating with xboard and player. A file called output.txt is created to record xboard inputs for debugging purposes.
 (loop
  (let ((x (read-line)))
    (let ((in (open "~/chess/output.txt" :if-does-not-exist :create :if-exists :append :direction :output)))

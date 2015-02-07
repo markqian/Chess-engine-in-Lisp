@@ -1,5 +1,35 @@
 (load "~/chess/src/data.lisp")
 
+(defun combine-element (f v c n)
+  (if (= n 0) (funcall f (aref v c 0))
+    (funcall f (aref v c n) (combine-element f v c (- n 1)))))
+
+(defun tokens (str test start)
+  (let ((p1 (position-if test str :start start)))
+    (if p1
+	(let ((p2 (position-if
+			 #'(lambda (c)
+			     (not (funcall test c)))
+			 str :start p1)))		 
+		 (cons (subseq str p1 p2)
+		       (if p2
+			   (tokens str test p2)
+			 nil)))
+	    nil)))
+
+(defun constituent (c)
+  (and (graphic-char-p c)
+       (not (char= c #\ ))))
+
+(defun not-slash (c)
+  (not (equal c #\/)))
+
+(defun map-null (n)
+  (let ((acc nil))
+    (dotimes (i n)
+      (push '() acc))
+    acc))
+  
 (defun getAttack (attack cord map)
   (gethash map (aref attack cord)))
 

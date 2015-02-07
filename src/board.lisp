@@ -1,5 +1,6 @@
 (load "~/chess/src/utility.lisp")
 
+;;reset board to default values
 (defun reset-board (b)
   (setf (blocker b) (createBoard 0)
         (friends b) (make-array '(2) :initial-element 0)
@@ -17,6 +18,7 @@
         (pawnhash b) 0
         (history b) '()))
 
+;;add a piece to the board
 (defun addPiece (b cord piece color)
   (setbit-board b color piece cord)
   (cond ((= piece KING) 
@@ -24,34 +26,31 @@
   (setpieceHash b color piece cord)
   (set-arBoard b cord piece))
 
-
+;;remove a piece from the board
 (defun removePiece (b cord piece color)
   (clearBit (aref (boards b) color piece) cord)
   (setpieceHash b color piece cord)
   (set-arBoard b cord EMPTY))
 
-
+;;Make a cord based on the from coordinate and to coordinate
 (defun move (b fcord tcord piece color)
   (removePiece b fcord piece color)
   (addPiece b tcord piece color))
 
-(defun combine-element (f v c n)
-  (if (= n 0) (funcall f (aref v c 0))
-    (funcall f (aref v c n) (combine-element f v c (- n 1)))))
-  
-
+;;update the board's bitboard information
 (defun updateBoard (b)
   (setf (aref (friends b) WHITE) (combine-element #'logior (boards b) WHITE 6))
   (setf (aref (friends b) BLACK) (combine-element #'logior (boards b) BLACK 6))
   (setf (blocker b) (logior (aref (friends b) WHITE) (aref (friends b) BLACK))))
 
+;;set color of the current player
 (defun setColor (b color)
   (if (= color (color b)) nil
     (setf (color b) color))
   (setf (hash b) (logior (hash b) colorHash))
   (setf (pawnhash b) (logior (pawnhash b) colorHash)))
 
-
+;;set castling flags
 (defun setCastling (b castling)
   (if (= (castling b) castling) T)
   (if (= (logand (castling b) W_OO) castling) 
@@ -64,6 +63,7 @@
       (setf (hash b) (logior (hash b) B_OOOHash)))
   (setf (castling b) castling))
 
+;;set enpassant if it's available
 (defun setEnpassant (b epcord)
   (if (equal (enpassant b) epcord) T)
   (if (not (eq (enpassant b) nil)) 
@@ -72,32 +72,7 @@
       (setf (hash b) (logior (hash b) (aref epHashes epcord))))
   (setf (enpassant b) epcord))
 
-(defun tokens (str test start)
-  (let ((p1 (position-if test str :start start)))
-    (if p1
-	(let ((p2 (position-if
-			 #'(lambda (c)
-			     (not (funcall test c)))
-			 str :start p1)))		 
-		 (cons (subseq str p1 p2)
-		       (if p2
-			   (tokens str test p2)
-			 nil)))
-	    nil)))
-
-(defun constituent (c)
-  (and (graphic-char-p c)
-       (not (char= c #\ ))))
-
-(defun not-slash (c)
-  (not (equal c #\/)))
-
-(defun map-null (n)
-  (let ((acc nil))
-    (dotimes (i n)
-      (push '() acc))
-    acc))
-
+;;parse piece placement for fenstring
 (defun parse-piece-placement (b pieceChrs)
   (let ((r 0))
     (dolist (rank (tokens pieceChrs #'not-slash 0))
@@ -112,11 +87,13 @@
 			(addPiece b cord piece color)
 			(incf cord))))))))
 
+;;parse fen string color field
 (defun parse-color-field (b colChr)
   (if (equal (string-downcase colChr) "w")
       (setColor b WHITE)
     (setColor b BLACK)))
 
+;;parse fenstring castle availability
 (defun parse-castle-availability (b castChr)
   (let ((castling 0))
     (loop for char across castChr do
@@ -126,21 +103,24 @@
 		((equal char #\q) (bitincf castling 'logior B_OOO)))
 	  (setCastling b castling))))
 
+;;parse fenstring enpassant
 (defun parse-enpassant (b epChr)
   (if (equal epChr "-")
       (setEnpassant b nil)
     (setEnpassant b (cdr (assoc epChr cordDic :test 'equal)))))
 
+;;parse fenstring half move counter
 (defun parse-halfmove-clockfield (b fiftyChr)
   (setf (fifty b) (max (parse-integer fiftyChr) 0)))
 
+;;parse fenstring full move counter
 (defun parse-fullmove-number (b moveNoChr)
   (let ((movenumber (- (* (parse-integer moveNoChr) 2) 2)))
     (if (= (color b) BLACK) (incf movenumber))
     (setf (history b) (map-null movenumber))
     (updateBoard b)))
 
-    
+;;apply fenstring to board to setup board    
 (defun applyFen (b fenstr)
   (let* ((parts (tokens fenstr #'constituent 0))
 	 (pieceChrs (nth 0 parts))
@@ -150,7 +130,6 @@
 	 (fiftyChr (if (or (>= (length parts) 6) (= (length parts) 5))
 		       (nth 4 parts) "0"))
 	 (moveNoChr (if (>= (length parts) 6) (nth 5 parts) "1")))
-    ;; (if (not (validate-slashes pieceChrs)) nil)
     (reset-board b)
     (parse-piece-placement b pieceChrs)
     (parse-color-field b colChr)
@@ -160,7 +139,7 @@
     (parse-fullmove-number b moveNoChr)
     b))
 
-
+;;update history for board
 (defun update-history (b move tpiece)
   (setf (history b) (cons  
 		     (list move 
@@ -173,7 +152,7 @@
 			   (opchecked b))
 		     (history b))))
 
-
+;;if castling move update board
 (defun castling-move (b move)
   (let* ((flag (ash move -12))
 	 (fcord (logand (ash move -6) 63)))
@@ -189,7 +168,7 @@
 	      ))
 	  (setf (aref (hasCastled b) (color b)) T)))))
     
-
+;;capture piece by updating board
 (defun capture-piece (b move) 
   (let* ((flag (ash move -12))
 	 (fcord (logand (ash move -6) 63))
@@ -218,10 +197,12 @@
 	     (not (find flag `(,king_castle ,queen_castle))))
 	(incf (fifty b))
       (setf (fifty b) 0))))
-  
+
+;;get rook information  
 (defun getrooks (b c p)
   (aref (aref (ini-rooks b) c) p))
 
+;;clear castle flags of current playing color
 (defun clear-castle-flags (b fpiece tpiece fcord tcord)
   (if (= (color b) WHITE)
       (progn
@@ -291,11 +272,13 @@
 		       (bitincf (hash b) 'logxor W_OOOHash)
 		       (bitincf (castling b) 'logand (lognot W_OOO))))))))))
 
+;;move pieces that are not promotion
 (defun not-promotions (b fpiece fcord tcord flag)
   (if (not (find flag promotions))
       (progn
 	(move b fcord tcord fpiece (color b)))))
 
+;;apply move for board
 (defun applyMove (b move)
   (let* ((flag (ash move -12))
 	 (fcord (logand (ash move -6) 63))
@@ -314,6 +297,7 @@
     (updateBoard b)
 ))
 
+;;reverse rook move
 (defun reverse-rook-move (b flag fcord color)
   (if (find flag `(,king_castle ,queen_castle))
       (let ((rookf 0)
@@ -326,6 +310,7 @@
 	(move b rookt rookf ROOK color)
 	(setf (aref (hasCastled b) color) nil))))
 
+;;reverse capture piece for board
 (defun reverse-captured-piece/square (b flag tcord fcord cpiece tpiece color)
   (let ((opcolor (- 1 color)))
     (cond ((not (= cpiece empty))
@@ -345,7 +330,7 @@
 	  (t (progn
 	       (addPiece b fcord tpiece color))))))
   
-
+;;pop move and update board to previous history
 (defun popMove (b)
   (let* ((last-history (car (history b)))
 	 (color (- 1 (color b)))
@@ -376,6 +361,4 @@
 	  (fifty b) fifty
 	  (history b) (cdr (history b)))))
 
-    
-
-(defvar test 42)
+  

@@ -9,11 +9,12 @@
 			  (rec (cdr x) acc))))))
     (rec x nil)))
 
-
+;;get position of bit
 (defun convertBitPos (n) 
   (if (= n 1) 0 
     (+ 1 (convertBitPos (/ n 2)))))
 
+;;set bit for bitboard
 (defmacro setBit (b p)
   `(setf (ldb (byte 1 (- 63 ,p)) ,b) 1))
 
@@ -45,6 +46,7 @@
 	       (,result ,result)
 	       (t ,retval))))))
 
+;;loop each bit in bitboard
 (defmacro do-bits ((var x) &rest body)
   "Evaluates [body] forms after binding [var] to each set bit in [x]"
   (let ((k (gensym)))
@@ -54,10 +56,11 @@
          (let ((,var (- 63 (convertBitPos (logand ,k (- ,k))))))
            ,@body)))))
 
-
+;;apply function f to bit and v
 (defmacro bitincf (bit f v)
   `(setf ,bit (funcall ,f ,bit ,v)))
 
+;;get the length of bitboard
 (defun bitLength (x)
   (let ((count 0)
 	(y x))
@@ -159,8 +162,10 @@
 (defconstant G8 62)
 (defconstant H8 63)
 
+;;promotion codes
 (defconstant PROMOTIONS `#(,QUEEN_PROMOTION ,ROOK_PROMOTION ,BISHOP_PROMOTION ,KNIGHT_PROMOTION))
 
+;;piece codes
 (defconstant EMPTY 0)
 (defconstant PAWN 1)
 (defconstant KNIGHT 2)
@@ -198,8 +203,7 @@
     "a5"  "b5"  "c5"  "d5"  "e5"  "f5"  "g5"  "h5" 
     "a6"  "b6"  "c6"  "d6"  "e6"  "f6"  "g6"  "h6" 
     "a7"  "b7"  "c7"  "d7"  "e7"  "f7"  "g7"  "h7" 
-    "a8"  "b8"  "c8"  "d8"  "e8"  "f8"  "g8"  "h8"
-))
+    "a8"  "b8"  "c8"  "d8"  "e8"  "f8"  "g8"  "h8"))
 
 (defvar reprSign '("" "P" "N" "B" "R" "Q" "K"))
 
@@ -329,6 +333,7 @@
 (defvar B_CASTLED 2)
 (defconstant WHITE 0)
 
+;;class for board
 (defclass board ()
  ((blocker    :accessor blocker    :initarg :blocker    :initform  0)
   (friends    :accessor friends    :initarg :friends    :initform (make-array '(2)))
@@ -423,10 +428,13 @@
       (setf (aref ray135 cord) (logior (aref rays cord 1)
 				      (aref rays cord 2)
 				      (ash 1 (- 63 cord)))))
-
+;attacks that are 0 degrees
 (defvar attack00 (map-into (make-array '64) 'make-hash-table))
+;attacks that are 45 degrees
 (defvar attack45 (map-into (make-array '64) 'make-hash-table))
+;attacks that are 90 degrees
 (defvar attack90 (map-into (make-array '64) 'make-hash-table))
+;attacks that are 135 degrees
 (defvar attack135 (map-into (make-array '64) 'make-hash-table))
 
 (defvar cmap '(128 64 32 16 8 4 2 1))
@@ -436,6 +444,7 @@
 
 (defvar h '())
 
+;;initialize attacks
 (loop for cord below 8 do
       (loop for amap from 1 to 255 do
 	    (if (not (= 0 (logand amap (nth cord cmap))))
@@ -477,8 +486,7 @@
 					     (aref rot2 cord2)))))
 		      (setAttack attack45 (aref rot2 cord) map45 val)
 		      (if (= (aref rot2 cord) 63)
-			  (add-to map45 val h))
-		      )
+			  (add-to map45 val h)))
 		    (let ((map135 (reduce 'logior 
 					  (do-bits (c map00)
 						   (collect (ash 1 (- 63 
@@ -547,11 +555,14 @@
 					       (logand (ash v 8) MAXBITBOARD))) 
 		    (aref attack135 (+ cord 8)))))
 
+
 (defvar shiftedFlags (make-array '(8)))
 (defvar shiftedFromCords (make-array '(64)))
 
+
 (loop for i below 64 do
       (setf (aref shiftedFromCords i) (ash i 6)))
+
 
 (loop for i in `(,NORMAL_MOVE ,QUEEN_CASTLE ,KING_CASTLE 
 		 ,ENPASSANT ,KNIGHT_PROMOTION ,BISHOP_PROMOTION
@@ -565,6 +576,7 @@
 	  do (setf (aref pieceHashes color piece cord)
 		   (random maxint)))))
 
+;;sample fen strings for testing
 (defvar fen16 "8/8/1P5p/8/1K3kP1/8/P7/2q5 b - - 0 1")
 (defvar fen15 "8/4P3/4K3/8/8/2k5/8/8 w - - 0 1")
 (defvar fen14 "r3k1nr/1bppqppp/4p3/4P3/1PpP4/2PB1N2/5PPP/R2Q1RK1 w kq - 0 1")

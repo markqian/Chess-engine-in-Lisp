@@ -1,5 +1,6 @@
 (load "~/chess/src/eval.lisp")
 
+;;classic alpha beta search function
 (defun alphaBeta (b alpha beta depthleft)
   (let* ((isCheck (isChecked b))
 	 (moves (if isCheck
@@ -25,5 +26,6 @@
 	  (values beta m)
 	(values alpha m)))))
 
+;;wrapper for getting score and move values
 (defun getResult (b alpha beta depth)
   (multiple-value-bind (score move) (alphaBeta b alpha beta depth)(list score move)))
