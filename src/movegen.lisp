@@ -335,10 +335,10 @@
 			  (if (not-zero (logand (aref bitPosArray (+ cord 8)) pawns))
 			      (setf a (logior a (aref bitPosArray (+ cord 8)))))
 			  (if (and 
-			       (= (ash cord -3) 3)
+			       (= (ash cord -3) 4)
 			       (= (aref arBoard (+ cord 8)) EMPTY)
 			       (not-zero (logand (aref bitPosArray (+ cord 16)) pawns)))
-			      (setf a (logior a (aref bitPosArray (+ cord 16)))))))
+				(setf a (logior a (aref bitPosArray (+ cord 16)))))))
 		   (collect (get-block-moves b a checkers cord))))))))
 
 ;;generate escape routes
