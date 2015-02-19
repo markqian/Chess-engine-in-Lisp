@@ -1,4 +1,3 @@
-
 ;; helper functions
 (defun flatten (x)
   (labels ((rec (x acc)

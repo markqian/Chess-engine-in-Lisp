@@ -1,4 +1,4 @@
-(load "~/chess/src/attack.lisp")
+(load "./src/attack.lisp")
 
 ;; generate new move based on move code
 (defun newMove (fromcord tocord &optional (flag NORMAL_MOVE)) 

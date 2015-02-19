@@ -1,4 +1,4 @@
-(load "~/chess/src/data.lisp")
+(load "./src/data.lisp")
 
 (defun combine-element (f v c n)
   (if (= n 0) (funcall f (aref v c 0))

@@ -1,4 +1,4 @@
-(load "~/chess/src/movegen.lisp")
+(load "./src/movegen.lisp")
 
 ;;Dumb eval function that simple check for mobility and piece values to determine the value of a position.
 (defun simple-eval (b)

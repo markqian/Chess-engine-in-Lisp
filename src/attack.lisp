@@ -1,4 +1,4 @@
-(load "~/chess/src/board.lisp")
+(load "./src/board.lisp")
 
 ;;generate bishop and queen attack on the specified coordinate
 (defun bisque-attacks (b cord color)

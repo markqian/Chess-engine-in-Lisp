@@ -1,5 +1,5 @@
 #!/usr/bin/sbcl --script
-(load "~/chess/src/search.lisp")
+(load "./src/search.lisp")
 
 ;;board object
 (defvar board1 (make-instance 'board))
@@ -98,7 +98,7 @@
 ;;main loop for communicating with xboard and player. A file called output.txt is created to record xboard inputs for debugging purposes.
 (loop
  (let ((x (read-line)))
-   (let ((in (open "~/chess/output.txt" :if-does-not-exist :create :if-exists :append :direction :output)))
+   (let ((in (open "./output.txt" :if-does-not-exist :create :if-exists :append :direction :output)))
     (write-line x in)
     (if (equal x "quit") (return))
     (recieve-command x)

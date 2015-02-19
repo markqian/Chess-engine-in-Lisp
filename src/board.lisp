@@ -1,4 +1,4 @@
-(load "~/chess/src/utility.lisp")
+(load "./src/utility.lisp")
 
 ;;reset board to default values
 (defun reset-board (b)

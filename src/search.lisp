@@ -1,4 +1,4 @@
-(load "~/chess/src/eval.lisp")
+(load "./src/eval.lisp")
 
 ;;classic alpha beta search function
 (defun alphaBeta (b alpha beta depthleft)
