@@ -22,7 +22,7 @@ sudo apt-get install xboard sbcl
 
 [![Screenshot](https://github.com/markqian/Chess-engine-in-Lisp/blob/master/screenshots/screenshot2.png)](http://youtu.be/SzdItkudGLw)
 
-The eval function is very primitive. The engine some time makes move that made little sense. The engine should improve a lot more when I implement more advance algorithms.
+The eval function is very primitive. The engine should improve a lot more when I implement more advance algorithms.
 
 
 
